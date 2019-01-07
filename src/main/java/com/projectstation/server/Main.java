@@ -24,10 +24,14 @@ import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.jevaengine.spacestation.SpaceStationFactory;
 import com.jevaengine.spacestation.StationAssetStreamFactory;
+import com.jevaengine.spacestation.entity.StationEntityFactory;
 import com.jevaengine.spacestation.entity.character.SpaceCharacterFactory;
 import com.jevaengine.spacestation.item.StationItemFactory;
 import com.jevaengine.spacestation.ui.StationControlFactory;
+import com.projectstation.server.entity.ServerStationEntityFactory;
+import com.projectstation.server.scene.model.NullSpriteFactory;
 import io.github.jevaengine.IAssetStreamFactory;
+import io.github.jevaengine.IEngineThreadPool;
 import io.github.jevaengine.audio.IAudioClipFactory;
 import io.github.jevaengine.audio.NullAudioClipFactory;
 import io.github.jevaengine.config.CachedConfigurationFactory;
@@ -69,7 +73,6 @@ import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.nio.file.Paths;
 
 public class Main implements WindowListener
@@ -167,6 +170,9 @@ public class Main implements WindowListener
 			bind(IRpgCharacterFactory.class).to(SpaceCharacterFactory.class);
 			bind(IEntityFactory.class).toProvider(new Provider<IEntityFactory>() {
 				@Inject
+				IEngineThreadPool threadPool;
+
+				@Inject
 				private IScriptBuilderFactory scriptBuilderFactory;
 
 				@Inject
@@ -198,8 +204,9 @@ public class Main implements WindowListener
 
 				@Override
 				public IEntityFactory get() {
-					IEntityFactory base = new RpgEntityFactory(scriptBuilderFactory, audioClipFactory, configurationFactory, characterFactory, particleEmitterFactory, animationSceneModelFactory, modelFactory);
-					return new ServerStationEntityFactory(base, itemFactory, configurationFactory, animationSceneModelFactory, assetStreamFactory, rotueFactory);
+					IEntityFactory base0 = new RpgEntityFactory(scriptBuilderFactory, audioClipFactory, configurationFactory, characterFactory, particleEmitterFactory, animationSceneModelFactory, modelFactory);
+					IEntityFactory base1 = new StationEntityFactory(base0, itemFactory, configurationFactory, animationSceneModelFactory, assetStreamFactory, rotueFactory);
+					return new ServerStationEntityFactory(base1, threadPool, itemFactory, configurationFactory, animationSceneModelFactory, assetStreamFactory, rotueFactory);
 				}
 			});
 
@@ -283,7 +290,7 @@ public class Main implements WindowListener
 				
 				@Override
 				public ISceneModelFactory get() {
-					ExtentionMuxedSceneModelFactory muxedFactory = new ExtentionMuxedSceneModelFactory(new SpriteSceneModelFactory(configurationFactory, spriteFactory, audioClipFactory));
+					ExtentionMuxedSceneModelFactory muxedFactory = new ExtentionMuxedSceneModelFactory(new SpriteSceneModelFactory(configurationFactory, new NullSpriteFactory(), audioClipFactory));
 					muxedFactory.put("jpar", particleEmitterFactory);
 					
 					return muxedFactory;
