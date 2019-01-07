@@ -6,7 +6,8 @@ import com.projectstation.network.entity.EntityNetworkAdapterException;
 import com.projectstation.network.entity.IEntityNetworkAdapter;
 import com.projectstation.network.entity.IEntityNetworkAdapterFactory;
 import com.projectstation.network.entity.EntityConfigurationDetails;
-import com.projectstation.server.ServerStationEntityFactory;
+import com.projectstation.server.entity.ServerStationEntityFactory;
+import com.projectstation.server.network.entity.IServerEntityNetworkAdapter;
 import com.projectstation.server.network.entity.ServerNetworkEntityMappings;
 import io.github.jevaengine.math.Vector3F;
 import io.github.jevaengine.world.World;
@@ -30,15 +31,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.SynchronousQueue;
 
 public class WorldServer {
+
+    private static final String SPAWN_CONTROLLER_NAME = "spawnController";
+
     private static final Logger logger = LoggerFactory.getLogger(WorldServer.class);
 
     private final World world;
     private final ServerNetworkEntityMappings netEntityMappings = new ServerNetworkEntityMappings();
-    private final Map<String, IEntityNetworkAdapter> entityNetworkAdapters = new HashMap<>();
-    private final HashSet<IEntityNetworkAdapter> pollRequests = new HashSet<>();
+    private final Map<String, IServerEntityNetworkAdapter> entityNetworkAdapters = new HashMap<>();
+    private final HashSet<IServerPollable> entityPollRequests = new HashSet<>();
 
     private final Queue<QueuedMessage> messageQueue = new ConcurrentLinkedQueue<>();
     private final Map<ChannelHandlerContext, VisitableServerHandler> clientHandlers = new HashMap<>();
@@ -109,7 +112,7 @@ public class WorldServer {
 
             try {
                 VisitableServerHandler visitable = clientHandlers.get(msg.ctx);
-                List<IClientVisit> response = msg.visit.visit(visitable, entityNetworkAdapters);
+                List<IClientVisit> response = msg.visit.visit(visitable);
 
                 if(!response.isEmpty()) {
                     for (IClientVisit v : response) {
@@ -124,15 +127,15 @@ public class WorldServer {
             }
         }
 
-        NetworkMessageQueue<ClientWorldVisit> delta = new NetworkMessageQueue<>();
-        Set<IEntityNetworkAdapter> oldPr = new HashSet(pollRequests);
-        pollRequests.clear();
-        for(IEntityNetworkAdapter e : oldPr) {
+        NetworkMessageQueue<IClientVisit> delta = new NetworkMessageQueue<>();
+        Set<IServerPollable> oldPr = new HashSet(entityPollRequests);
+        entityPollRequests.clear();
+        for(IServerPollable e : oldPr) {
             try {
-                for(WorldVisit v : e.pollDelta(deltaTime))
-                    delta.queue(new ClientWorldVisit(v));
+                for(IClientVisit v : e.poll(deltaTime))
+                    delta.queue(v);
 
-            } catch (EntityNetworkAdapterException ex) {
+            } catch (NetworkPollException ex) {
                 logger.error("Unable to poll delta of entity.", ex);
             }
         }
@@ -154,11 +157,25 @@ public class WorldServer {
             if(details == null)
                 throw new RuntimeException("Synchronized entity has no configuration details.");
 
-            final IEntityNetworkAdapter net = netEntityMappings.get(e.getClass()).create(e, details, new EntityNetworkAdapterHost(e.getInstanceName()));
+            final IServerEntityNetworkAdapter net = createNetworkAdapter(e.getClass(), e, details, new EntityNetworkAdapterHost(e.getInstanceName()));
 
             entityNetworkAdapters.put(e.getInstanceName(), net);
-            pollRequests.add(net);
+            entityPollRequests.add(net);
+
+            try {
+                ChannelGroup clients = serverHandler.getWorldClients();
+                for(WorldVisit v : net.createInitializeSteps())
+                    clients.write(new ClientWorldVisit(v));
+
+                clients.flush();
+            } catch (EntityNetworkAdapterException ex) {
+                logger.error("Unable to send initialize steps for new world entity.", ex);
+            }
         }
+    }
+
+    private <T extends IEntity> IServerEntityNetworkAdapter createNetworkAdapter(Class<T> cls, Object entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost host) {
+        return netEntityMappings.get(cls).create((T)entity, config, host);
     }
 
     private void unregisterNetworkEntity(IEntity e) {
@@ -174,58 +191,12 @@ public class WorldServer {
 
         @Override
         public void poll() {
-            pollRequests.add(entityNetworkAdapters.get(name));
+            entityPollRequests.add(entityNetworkAdapters.get(name));
         }
 
         @Override
         public boolean isOwner() {
             return true;
-        }
-    }
-
-    private class VisitableServerHandler implements IServerWorldHandler{
-        long clientTimeDelta = 0;
-
-        private Set<String> ownedEntities = new HashSet<>();
-
-        @Override
-        public World getWorld() {
-            return world;
-        }
-
-        public boolean hasWorld() {
-            return world != null;
-        }
-
-        @Override
-        public IEntityFactory getEntityFactory() {
-            return entityFactory;
-        }
-
-        @Override
-        public void setClientTime(long time) {
-            clientTimeDelta = time - System.nanoTime() / 1000000;
-        }
-
-        public long getClientTime() {
-            return clientTimeDelta + System.nanoTime() / 1000000;
-        }
-
-        @Override
-        public void authorizeOwnership(String entityName) {
-            ownedEntities.add(entityName);
-        }
-
-        @Override
-        public void unauthorizeOwnership(String entityName) {
-            ownedEntities.remove(entityName);
-        }
-
-        @Override
-        public boolean isOwner(String entityName) {
-            //If the ownership has been authorized to this respective client, then I am not the owner
-            //with respect to this client.
-            return !ownedEntities.contains(entityName);
         }
     }
 
@@ -252,7 +223,16 @@ public class WorldServer {
 
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-            clientHandlers.put(ctx, new VisitableServerHandler());
+            VisitableServerHandler handler = new VisitableServerHandler(entityNetworkAdapters, world, SPAWN_CONTROLLER_NAME, entityFactory, ctx, new IPollRequestHost() {
+                @Override
+                public void poll() {
+                    entityPollRequests.add(clientHandlers.get(ctx));
+                }
+            });
+
+            clientHandlers.put(ctx, handler);
+
+            entityPollRequests.add(handler);
         }
 
         @Override
