@@ -2,14 +2,12 @@ package com.projectstation.server.network;
 
 import com.projectstation.network.*;
 import com.projectstation.network.command.client.ClientWorldVisit;
-import com.projectstation.network.entity.EntityNetworkAdapterException;
-import com.projectstation.network.entity.IEntityNetworkAdapter;
-import com.projectstation.network.entity.IEntityNetworkAdapterFactory;
-import com.projectstation.network.entity.EntityConfigurationDetails;
+import com.projectstation.network.command.world.RemoveEntityCommand;
+import com.projectstation.network.entity.*;
 import com.projectstation.server.entity.ServerStationEntityFactory;
-import com.projectstation.server.network.entity.IServerEntityNetworkAdapter;
 import com.projectstation.server.network.entity.ServerNetworkEntityMappings;
 import io.github.jevaengine.math.Vector3F;
+import io.github.jevaengine.rpg.item.IItemFactory;
 import io.github.jevaengine.world.World;
 import io.github.jevaengine.world.entity.IEntity;
 import io.github.jevaengine.world.entity.IEntityFactory;
@@ -47,15 +45,17 @@ public class WorldServer {
     private final Map<ChannelHandlerContext, VisitableServerHandler> clientHandlers = new HashMap<>();
 
     private final IEntityFactory entityFactory;
+    private final IItemFactory itemFactory;
 
     private final WorldServerHandler serverHandler = new WorldServerHandler();
 
     EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public WorldServer(IEntityFactory entityFactory, World world, int port) {
+    public WorldServer(IItemFactory itemFactory, IEntityFactory entityFactory, World world, int port) {
         this.world = world;
         this.entityFactory = entityFactory;
+        this.itemFactory = itemFactory;
         world.getObservers().add(new WorldObserver());
 
         for (IEntity e : world.getEntities().all()) {
@@ -63,6 +63,19 @@ public class WorldServer {
         }
 
         initNetwork(port);
+    }
+
+    public World getWorld() {
+        return world;
+    }
+    public VisitableServerHandler getNickname(String nickname) {
+        for(VisitableServerHandler h : clientHandlers.values())
+        {
+            if(h.getNickname().compareTo(nickname) == 0)
+                return h;
+        }
+
+        return null;
     }
 
     private void initNetwork(int port) {
@@ -154,8 +167,10 @@ public class WorldServer {
 
         IEntityNetworkAdapterFactory factory = netEntityMappings.get(e.getClass());
         if (factory != null) {
-            if(details == null)
-                throw new RuntimeException("Synchronized entity has no configuration details.");
+            if(details == null) {
+                logger.info("Synchronized entity " + e.getInstanceName() + " has no configuration details.");
+                details = new EntityConfigurationDetails(entityFactory.lookup(e.getClass()));
+            }
 
             final IServerEntityNetworkAdapter net = createNetworkAdapter(e.getClass(), e, details, new EntityNetworkAdapterHost(e.getInstanceName()));
 
@@ -164,8 +179,8 @@ public class WorldServer {
 
             try {
                 ChannelGroup clients = serverHandler.getWorldClients();
-                for(WorldVisit v : net.createInitializeSteps())
-                    clients.write(new ClientWorldVisit(v));
+                for(IClientVisit v : net.createInitializeSteps())
+                    clients.write(v);
 
                 clients.flush();
             } catch (EntityNetworkAdapterException ex) {
@@ -179,7 +194,16 @@ public class WorldServer {
     }
 
     private void unregisterNetworkEntity(IEntity e) {
-        entityNetworkAdapters.remove(e.getInstanceName());
+        IEntityNetworkAdapter adapter = null;
+        if(entityNetworkAdapters.containsKey(e.getInstanceName()))
+            adapter = entityNetworkAdapters.get(e.getInstanceName());
+
+        if(adapter != null) {
+            entityNetworkAdapters.remove(e.getInstanceName());
+            entityPollRequests.remove(adapter);
+            ChannelGroup clients = serverHandler.getWorldClients();
+            clients.writeAndFlush(new ClientWorldVisit(new RemoveEntityCommand(e.getInstanceName())));
+        }
     }
 
     private class EntityNetworkAdapterHost implements IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost {
@@ -223,7 +247,7 @@ public class WorldServer {
 
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-            VisitableServerHandler handler = new VisitableServerHandler(entityNetworkAdapters, world, SPAWN_CONTROLLER_NAME, entityFactory, ctx, new IPollRequestHost() {
+            VisitableServerHandler handler = new VisitableServerHandler(entityNetworkAdapters, WorldServer.this, SPAWN_CONTROLLER_NAME, itemFactory, entityFactory, ctx, new IPollRequestHost() {
                 @Override
                 public void poll() {
                     entityPollRequests.add(clientHandlers.get(ctx));

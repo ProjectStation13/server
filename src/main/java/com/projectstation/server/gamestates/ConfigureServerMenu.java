@@ -43,22 +43,8 @@ public class ConfigureServerMenu implements IState
 	
 	private IStateContext m_context;
 	private Window m_window;
-	
-	private final IWindowFactory m_windowFactory;
-	private final IParallelWorldFactory m_worldFactory;
-	private final IAudioClipFactory m_audioClipFactory;
-	private final ISpriteFactory m_spriteFactory;
-	private final IEntityFactory m_entityFactory;
 	private final Logger m_logger = LoggerFactory.getLogger(ConfigureServerMenu.class);
-	
-	public ConfigureServerMenu(IEntityFactory entityFactory, IWindowFactory windowFactory, IParallelWorldFactory worldFactory, IAudioClipFactory audioClipFactory, ISpriteFactory spriteFactory)
-	{
-		m_entityFactory = entityFactory;
-		m_windowFactory = windowFactory;
-		m_worldFactory = worldFactory;
-		m_audioClipFactory = audioClipFactory;
-		m_spriteFactory = spriteFactory;
-	}
+
 	
 	@Override
 	public void enter(IStateContext context)
@@ -67,7 +53,7 @@ public class ConfigureServerMenu implements IState
 
 		try
 		{
-			m_window = m_windowFactory.create(URI.create("file:///ui/windows/mainmenu.jwl"), new MainMenuBehaviourInjector());
+			m_window = context.getWindowFactory().create(URI.create("file:///ui/windows/mainmenu.jwl"), new MainMenuBehaviourInjector());
 			context.getWindowManager().addWindow(m_window);
 			m_window.center();
 		} catch (WindowConstructionException e)
@@ -99,12 +85,12 @@ public class ConfigureServerMenu implements IState
 			getControl(Button.class, "btnNewGame").getObservers().add(new IButtonPressObserver() {
 				@Override
 				public void onPress() {
-					m_context.setState(new Loading(m_windowFactory, m_worldFactory, m_audioClipFactory, m_spriteFactory, ENTRY_MAP, new Loading.ILoadingWorldHandler() {
+					m_context.setState(new Loading(ENTRY_MAP, new Loading.ILoadingWorldHandler() {
 						@Override
 						public void done(FutureResult<World, WorldConstructionException> world) {
 							try
 							{
-								m_context.setState(new SimulateServerWorld(m_entityFactory, m_windowFactory, m_worldFactory, m_audioClipFactory, m_spriteFactory, world.get()));
+								m_context.setState(new SimulateServerWorld(world.get()));
 							} catch (WorldConstructionException e)
 							{
 								m_logger.error("Unable to enter playing state due to error in loading world", e);

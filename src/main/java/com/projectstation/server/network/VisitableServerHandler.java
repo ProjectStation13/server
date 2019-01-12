@@ -2,13 +2,16 @@ package com.projectstation.server.network;
 
 import com.projectstation.network.IClientVisit;
 import com.projectstation.network.IPollRequestHost;
+import com.projectstation.network.IServerPollable;
 import com.projectstation.network.IServerWorldHandler;
 import com.projectstation.network.command.client.ClientCharacterAssignment;
 import com.projectstation.network.command.client.ClientGiveOwnership;
 import com.projectstation.network.entity.IEntityNetworkAdapter;
 import com.projectstation.server.entity.ISpawnController;
 import com.projectstation.server.entity.ISpawnControllerListener;
-import com.projectstation.server.network.entity.IServerEntityNetworkAdapter;
+import com.projectstation.network.entity.IServerEntityNetworkAdapter;
+import com.projectstation.server.network.entity.CharacterNetworkAdapter;
+import io.github.jevaengine.rpg.item.IItemFactory;
 import io.github.jevaengine.world.World;
 import io.github.jevaengine.world.entity.IEntity;
 import io.github.jevaengine.world.entity.IEntityFactory;
@@ -27,27 +30,49 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
     private Set<String> ownedEntities = new HashSet<>();
     private IEntity playerEntity = null;
     private final IEntityFactory entityFactory;
-    private final World world;
+    private final IItemFactory itemFactory;
+    private final WorldServer world;
     private final IPollRequestHost host;
     private final String spawnControllerName;
     private final Map<String, IServerEntityNetworkAdapter> entityAdapterMapping;
     private boolean requestedPlayerSpawn = false;
+    private String nickname = "";
 
-    public VisitableServerHandler(Map<String, IServerEntityNetworkAdapter> entityAdapterMapping, World world, String spawnControllerName, IEntityFactory entityFactory, ChannelHandlerContext ctx, IPollRequestHost host) {
+    public VisitableServerHandler(Map<String, IServerEntityNetworkAdapter> entityAdapterMapping, WorldServer world, String spawnControllerName, IItemFactory itemFactory, IEntityFactory entityFactory, ChannelHandlerContext ctx, IPollRequestHost host) {
         this.ctx = ctx;
         this.entityAdapterMapping = entityAdapterMapping;
         this.spawnControllerName = spawnControllerName;
         this.world = world;
         this.entityFactory = entityFactory;
         this.host = host;
+        this.itemFactory = itemFactory;
+    }
+
+    @Override
+    public boolean setNickname(String selectedNickname) {
+        if(world.getNickname(selectedNickname) != null)
+            return false;
+
+        nickname = selectedNickname;
+        host.poll();
+        return true;
+    }
+
+    public String getNickname() {
+        return nickname;
     }
 
     public List<IClientVisit> poll(int deltaTime) {
         List<IClientVisit> response = new ArrayList<>();
 
-        if(playerEntity == null && !requestedPlayerSpawn) {
+        CharacterNetworkAdapter playerAdapter = getPlayerAdapter();
+        if(playerAdapter != null) {
+            playerAdapter.setNickname(nickname);
+        }
+
+        if(playerEntity == null && !requestedPlayerSpawn && nickname.length() > 0) {
             requestedPlayerSpawn = true;
-            ISpawnController controller = world.getEntities().getByName(ISpawnController.class, spawnControllerName);
+            ISpawnController controller = world.getWorld().getEntities().getByName(ISpawnController.class, spawnControllerName);
 
             if(controller == null) {
                 logger.error("Unable to spawn character, no spawn controller named " + spawnControllerName);
@@ -75,7 +100,7 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
 
     @Override
     public World getWorld() {
-        return world;
+        return world.getWorld();
     }
 
     public boolean hasWorld() {
@@ -114,7 +139,28 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
     }
 
     @Override
-    public IEntityNetworkAdapter getAdapter(String entityName) {
+    public IItemFactory getItemFactory() {
+        return itemFactory;
+    }
+
+    private CharacterNetworkAdapter getPlayerAdapter() {
+        if(playerEntity != null)
+            return getAdapter(CharacterNetworkAdapter.class, playerEntity.getInstanceName());
+
+        return null;
+    }
+
+    @Override
+    public <T extends IServerEntityNetworkAdapter> T getAdapter(Class<T> cls, String entityName) {
+        IServerEntityNetworkAdapter a = entityAdapterMapping.get(entityName);
+        if(a != null && cls.isAssignableFrom(a.getClass()))
+            return (T)a;
+
+        return null;
+    }
+
+    @Override
+    public IServerEntityNetworkAdapter getAdapter(String entityName) {
         return entityAdapterMapping.get(entityName);
     }
 }

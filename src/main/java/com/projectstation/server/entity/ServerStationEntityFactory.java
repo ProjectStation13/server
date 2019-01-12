@@ -114,7 +114,7 @@ public class ServerStationEntityFactory implements IEntityFactory {
 			m_logger.error("Unable to insantiate configuration for entity. Using null configuration instead.", e);
 		}
 
-		T e = create(entityClass, instanceName, configVar);
+		T e = create(entityClass, instanceName, config, configVar);
 		synchronized (m_entityConfigDetails) {
 			m_entityConfigDetails.put(e, new EntityConfigurationDetails(lookup(entityClass), config));
 		}

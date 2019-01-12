@@ -59,29 +59,18 @@ public class SimulateServerWorld implements IState {
 
 	private IStateContext context;
 	private final World world;
-
-	private final IWindowFactory windowFactory;
-	private final IParallelWorldFactory worldFactory;
-	private final IAudioClipFactory audioClipFactory;
-	private final ISpriteFactory spriteFactory;
 	private final Logger logger = LoggerFactory.getLogger(SimulateServerWorld.class);
 
-	private final WorldServer worldServer;
+	private WorldServer worldServer;
 
-	public SimulateServerWorld(IEntityFactory entityFactory, IWindowFactory windowFactory, IParallelWorldFactory worldFactory, IAudioClipFactory audioClipFactory, ISpriteFactory spriteFactory, World world) {
-		this.windowFactory = windowFactory;
-		this.worldFactory = worldFactory;
-		this.audioClipFactory = audioClipFactory;
-		this.spriteFactory = spriteFactory;
+	public SimulateServerWorld(World world) {
 		this.world = world;
-
-		this.worldServer = new WorldServer(entityFactory, world, PORT);
 	}
 
 	@Override
 	public void enter(IStateContext context) {
 		this.context = context;
-
+		this.worldServer = new WorldServer(context.getItemFactory(), context.getEntityFactory(), world, PORT);
 	}
 
 	@Override
