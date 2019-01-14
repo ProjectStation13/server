@@ -52,7 +52,6 @@ import io.github.jevaengine.rpg.entity.RpgEntityFactory;
 import io.github.jevaengine.rpg.entity.character.IRpgCharacterFactory;
 import io.github.jevaengine.rpg.item.IItemFactory;
 import io.github.jevaengine.rpg.item.usr.UsrItemFactory;
-import io.github.jevaengine.rpg.spell.ISpellFactory;
 import io.github.jevaengine.rpg.spell.usr.UsrSpellFactory;
 import io.github.jevaengine.rpg.ui.RpgControlFactory;
 import io.github.jevaengine.script.IScriptBuilderFactory;
@@ -257,7 +256,6 @@ public class Main implements WindowListener
 			bind(IEffectMapFactory.class).to(TiledEffectMapFactory.class);
 			bind(IRenderer.class).toInstance(new FrameRenderer(m_frame, IS_FULL_SCREEN, RenderFitMode.Stretch));
 			bind(IParticleEmitterFactory.class).to(DefaultParticleEmitterFactory.class);
-			bind(ISpellFactory.class).to(UsrSpellFactory.class);
 			
 			bind(IAssetStreamFactory.class).toProvider(new Provider<IAssetStreamFactory>() {
 				@Override
@@ -290,7 +288,7 @@ public class Main implements WindowListener
 				public IGraphicFactory get() {
 					ExtentionMuxedGraphicFactory muxedGraphicFactory = new ExtentionMuxedGraphicFactory(new BufferedImageGraphicFactory(renderer, assetStreamFactory));
 					IGraphicFactory graphicFactory = new CachedGraphicFactory(muxedGraphicFactory);
-					muxedGraphicFactory.put(".sgf", new ShadedGraphicFactory(new DefaultGraphicShaderFactory(configurationFactory), graphicFactory, configurationFactory));
+					muxedGraphicFactory.put(".sgf", new ShadedGraphicFactory(new DefaultGraphicShaderFactory(this, configurationFactory), graphicFactory, configurationFactory));
 					return graphicFactory;
 				}
 			});
