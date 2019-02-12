@@ -51,8 +51,6 @@ import io.github.jevaengine.rpg.dialogue.ScriptedDialogueRouteFactory;
 import io.github.jevaengine.rpg.entity.RpgEntityFactory;
 import io.github.jevaengine.rpg.entity.character.IRpgCharacterFactory;
 import io.github.jevaengine.rpg.item.IItemFactory;
-import io.github.jevaengine.rpg.item.usr.UsrItemFactory;
-import io.github.jevaengine.rpg.spell.usr.UsrSpellFactory;
 import io.github.jevaengine.rpg.ui.RpgControlFactory;
 import io.github.jevaengine.script.IScriptBuilderFactory;
 import io.github.jevaengine.ui.DefaultControlFactory;
@@ -214,30 +212,9 @@ public class Main implements WindowListener
 			bind(IWorldFactory.class).to(SpaceStationFactory.class);
 
 			bind(IDialogueRouteFactory.class).to(ScriptedDialogueRouteFactory.class);
-			bind(IItemFactory.class).toProvider(new Provider<IItemFactory>() {
+			bind(IItemFactory.class).to(StationItemFactory.class);
 
 
-				@Inject
-				private IConfigurationFactory configurationFactory;
-
-				@Inject
-				private IGraphicFactory graphicFactory;
-
-				@Inject
-				private IAnimationSceneModelFactory modelFactory;
-
-				@Inject
-				private Provider<IEntityFactory> entityFactory;
-
-
-				@Override
-				public IItemFactory get() {
-					IItemFactory base0 = new UsrItemFactory(configurationFactory, graphicFactory, modelFactory);
-					IItemFactory base = new StationItemFactory(configurationFactory, graphicFactory, modelFactory, entityFactory, this);
-					return new ServerStationItemFactory(base);
-				}
-			});
-			
 			bind(IControlFactory.class).toProvider(new Provider<IControlFactory>() {
 				@Inject
 				private IGraphicFactory graphicFactory;
