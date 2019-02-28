@@ -4,6 +4,7 @@ import com.jevaengine.spacestation.entity.Infrastructure;
 import com.jevaengine.spacestation.entity.InteractableDoor;
 import com.jevaengine.spacestation.entity.ItemDrop;
 import com.jevaengine.spacestation.entity.atmos.LiquidPipe;
+import com.jevaengine.spacestation.entity.character.SpaceCharacter;
 import com.jevaengine.spacestation.entity.network.NetworkToggleControl;
 import com.jevaengine.spacestation.entity.network.NetworkWire;
 import com.jevaengine.spacestation.entity.power.PowerWire;
@@ -20,7 +21,7 @@ public class ServerNetworkEntityMappings extends EntityNetworkAdapterMapping<ISe
                     inf.isTraversable()
                 ));
 
-        register(DefaultRpgCharacter.class, new CharacterNetworkAdapterFactory());
+        register(SpaceCharacter.class, new CharacterNetworkAdapterFactory());
         register(InteractableDoor.class, new DoorEntityNetworkAdapterFactory());
         register(ItemDrop.class, new ItemDropNetworkAdapterFactory());
         register(LaserProjectile.class, new ProjectileNetworkAdapterFactory());

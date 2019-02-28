@@ -186,6 +186,8 @@ public class WorldServer {
             } catch (EntityNetworkAdapterException ex) {
                 logger.error("Unable to send initialize steps for new world entity.", ex);
             }
+        } else {
+            logger.warn("No synchronization adapter for entity. Not synchronizing entity " + e.getInstanceName());
         }
     }
 

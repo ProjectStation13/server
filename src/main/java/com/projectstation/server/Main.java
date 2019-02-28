@@ -209,11 +209,32 @@ public class Main implements WindowListener
 				}
 			});
 
+			bind(IItemFactory.class).toProvider(new Provider<IItemFactory>() {
+				@Inject
+				IEngineThreadPool threadPool;
+
+				@Inject
+				private IGraphicFactory graphicFactory;
+
+				@Inject
+				private IConfigurationFactory configurationFactory;
+
+				@Inject
+				private IAnimationSceneModelFactory modelFactory;
+
+				@Inject
+				private Provider<IEntityFactory> entityFactory;
+
+				@Override
+				public IItemFactory get() {
+					IItemFactory base0 = new StationItemFactory(configurationFactory, graphicFactory, modelFactory, entityFactory, this);
+					return new ServerStationItemFactory(base0);
+				}
+			});
+
 			bind(IWorldFactory.class).to(SpaceStationFactory.class);
 
 			bind(IDialogueRouteFactory.class).to(ScriptedDialogueRouteFactory.class);
-			bind(IItemFactory.class).to(StationItemFactory.class);
-
 
 			bind(IControlFactory.class).toProvider(new Provider<IControlFactory>() {
 				@Inject

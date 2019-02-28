@@ -17,6 +17,10 @@ public class ServerStationItemFactory implements IItemFactory {
 
     public static URI getConfig(IItem item) {
         synchronized (configMapping) {
+
+            if(!configMapping.containsKey(item))
+                throw new RuntimeException("Unidentified item.");
+
             return configMapping.get(item);
         }
     }
