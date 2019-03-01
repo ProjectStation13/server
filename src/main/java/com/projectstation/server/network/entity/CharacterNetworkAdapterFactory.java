@@ -1,5 +1,6 @@
 package com.projectstation.server.network.entity;
 
+import com.jevaengine.spacestation.entity.character.SpaceCharacter;
 import com.projectstation.network.IClientVisit;
 import com.projectstation.network.command.client.ClientWorldVisit;
 import com.projectstation.network.command.client.GiveEntityNickname;
@@ -21,10 +22,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CharacterNetworkAdapterFactory implements IEntityNetworkAdapterFactory<IServerEntityNetworkAdapter, IRpgCharacter> {
+public class CharacterNetworkAdapterFactory implements IEntityNetworkAdapterFactory<IServerEntityNetworkAdapter, SpaceCharacter> {
 
     @Override
-    public IServerEntityNetworkAdapter create(IRpgCharacter e, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
+    public IServerEntityNetworkAdapter create(SpaceCharacter e, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
         return new CharacterNetworkAdapter(e, config, pr);
     }
 }

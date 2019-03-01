@@ -1,5 +1,10 @@
 package com.projectstation.server.network.entity;
 
+import com.jevaengine.spacestation.entity.character.ISpaceCharacterStatusObserver;
+import com.jevaengine.spacestation.entity.character.SpaceCharacter;
+import com.jevaengine.spacestation.entity.character.SpaceCharacterAttribute;
+import com.jevaengine.spacestation.entity.character.symptoms.ISymptom;
+import com.jevaengine.spacestation.entity.character.symptoms.ISymptomDetails;
 import com.jevaengine.spacestation.item.StationItemFactory;
 import com.projectstation.network.IClientVisit;
 import com.projectstation.network.WorldVisit;
@@ -31,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CharacterNetworkAdapter implements IServerEntityNetworkAdapter {
-    private final IRpgCharacter entity;
+    private final SpaceCharacter entity;
     private final EntityConfigurationDetails config;
     private final IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost host;
     private String nickname = "";
@@ -50,7 +55,7 @@ public class CharacterNetworkAdapter implements IServerEntityNetworkAdapter {
 
     private final List<WorldVisit> observedChanges = new ArrayList<>();
 
-    public CharacterNetworkAdapter(IRpgCharacter entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
+    public CharacterNetworkAdapter(SpaceCharacter entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
         this.host = pr;
         this.entity = entity;
         this.config = config;
@@ -61,6 +66,7 @@ public class CharacterNetworkAdapter implements IServerEntityNetworkAdapter {
 
         entity.getLoadout().getObservers().add(new LoadoutObserver());
         entity.getInventory().getObservers().add(new InventoryObserver());
+        entity.getStatusResolver().getObservers().add(new StatusObserver());
     }
 
     public void setNickname(String nickname) {
@@ -111,6 +117,12 @@ public class CharacterNetworkAdapter implements IServerEntityNetworkAdapter {
 
             response.add(new ClientWorldVisit(new SetEntityPositionCommand(entity.getInstanceName(), entity.getBody().getLocation(), entity.getBody().getDirection())));
             response.add(new ClientWorldVisit(new SetEntityVelocityCommand(entity.getInstanceName(), entity.getBody().getLocation(), entity.getBody().getLinearVelocity())));
+
+            for(ISymptomDetails s : entity.getStatusResolver().getSymptoms()) {
+                response.add(new ClientWorldVisit(new AddSymptomCommand(entity.getInstanceName(), s.getName(), s.getDescription())));
+            }
+
+            response.add(new ClientWorldVisit(new SetEffectiveHitpoints(entity.getInstanceName(), entity.getAttributes().get(SpaceCharacterAttribute.EffectiveHitpoints).get())));
 
             return response;
         } catch(ValueSerializationException | IOException ex) {
@@ -237,6 +249,33 @@ public class CharacterNetworkAdapter implements IServerEntityNetworkAdapter {
         @Override
         public void itemAction(int slotIndex, IRpgCharacter accessor, String action) {
 
+        }
+    }
+
+    private final class StatusObserver implements ISpaceCharacterStatusObserver {
+        @Override
+        public void affectedBySymptom(ISymptomDetails symptom) {
+            observedChanges.add(new AddSymptomCommand(entity.getInstanceName(), symptom.getName(), symptom.getDescription()));
+        }
+
+        @Override
+        public void lostSymptom(ISymptomDetails symptom) {
+            observedChanges.add(new RemoveSymptomCommand(entity.getInstanceName(), symptom.getName()));
+        }
+
+        @Override
+        public void died() {
+
+        }
+
+        @Override
+        public void revived() {
+
+        }
+
+        @Override
+        public void effectiveHitpointsChanged(float newHitpoints) {
+            observedChanges.add(new SetEffectiveHitpoints(entity.getInstanceName(), newHitpoints));
         }
     }
 }
