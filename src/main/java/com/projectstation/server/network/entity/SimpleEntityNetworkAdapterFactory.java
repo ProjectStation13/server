@@ -129,6 +129,7 @@ class SimpleEntityNetworkAdapter<T extends IEntity> implements IServerEntityNetw
             decl.isAirTight = true;
             decl.heatConductivity = 0;
             decl.isTransparent = false;
+            decl.consumes = false;
 
             if(entity instanceof Infrastructure) {
                 Infrastructure inf = (Infrastructure)entity;

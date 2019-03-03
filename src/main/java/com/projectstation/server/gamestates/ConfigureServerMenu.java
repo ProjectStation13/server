@@ -39,7 +39,7 @@ import java.net.URI;
 
 public class ConfigureServerMenu implements IState
 {
-	private static final URI ENTRY_MAP = URI.create("file:///world/multiplayer/simple_trim.jmp");
+	private static final URI ENTRY_MAP = URI.create("file:///world/multiplayer/firstStationRework.jmp");
 	
 	private IStateContext m_context;
 	private Window m_window;
