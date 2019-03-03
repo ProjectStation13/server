@@ -3,11 +3,10 @@ package com.projectstation.server.network.entity;
 import com.jevaengine.spacestation.entity.Infrastructure;
 import com.jevaengine.spacestation.entity.InteractableDoor;
 import com.jevaengine.spacestation.entity.ItemDrop;
-import com.jevaengine.spacestation.entity.atmos.LiquidPipe;
+import com.jevaengine.spacestation.entity.atmos.*;
 import com.jevaengine.spacestation.entity.character.SpaceCharacter;
-import com.jevaengine.spacestation.entity.network.NetworkToggleControl;
-import com.jevaengine.spacestation.entity.network.NetworkWire;
-import com.jevaengine.spacestation.entity.power.PowerWire;
+import com.jevaengine.spacestation.entity.network.*;
+import com.jevaengine.spacestation.entity.power.*;
 import com.jevaengine.spacestation.entity.projectile.LaserProjectile;
 import com.projectstation.network.entity.EntityNetworkAdapterMapping;
 import com.projectstation.network.entity.IServerEntityNetworkAdapter;
@@ -39,5 +38,19 @@ public class ServerNetworkEntityMappings extends EntityNetworkAdapterMapping<ISe
         ));
 
         register(SceneArtifact.class, new SimpleEntityNetworkAdapterFactory<>( (inf) -> inf.isTraversable()));
+
+        register(NetworkAirQualitySensor.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(PowerSwitch.class, new SimpleEntityNetworkAdapterFactory( (inf) -> false));
+        register(Diode.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(NetworkDoorController.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(GasVent.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(GasEngine.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(FuelChamber.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(LiquidTank.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(LiquidPump.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(PressureCollapseValve.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(NetworkPowerMeter.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(Capacitor.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(Alternator.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
     }
 }
