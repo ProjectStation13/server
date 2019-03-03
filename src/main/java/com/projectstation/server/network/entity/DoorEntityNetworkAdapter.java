@@ -25,9 +25,9 @@ public class DoorEntityNetworkAdapter implements IServerEntityNetworkAdapter {
     private boolean locationChanged = true;
     private boolean statusChanged = true;
     private final EntityConfigurationDetails config;
-    private final IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pollRequest;
+    private final IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pollRequest;
 
-    public DoorEntityNetworkAdapter(Door entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
+    public DoorEntityNetworkAdapter(Door entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pr) {
         this.entity = entity;
         this.entity.getBody().getObservers().add(new LocationObserver());
         this.entity.getObservers().add(new DoorStatusObserver());

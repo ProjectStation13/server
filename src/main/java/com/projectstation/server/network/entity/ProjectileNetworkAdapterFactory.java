@@ -8,7 +8,7 @@ import com.projectstation.network.entity.IServerEntityNetworkAdapter;
 public class ProjectileNetworkAdapterFactory implements IEntityNetworkAdapterFactory<IServerEntityNetworkAdapter, IProjectile> {
 
     @Override
-    public IServerEntityNetworkAdapter create(IProjectile e, EntityConfigurationDetails config, IEntityNetworlAdapterHost pr) {
+    public IServerEntityNetworkAdapter create(IProjectile e, EntityConfigurationDetails config, IEntityNetworkAdapterHost pr) {
         return new ProjectileNetworkAdapter(e, config, pr);
     }
 }

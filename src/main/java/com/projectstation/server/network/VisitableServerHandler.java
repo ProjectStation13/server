@@ -6,6 +6,7 @@ import com.projectstation.network.IServerPollable;
 import com.projectstation.network.IServerWorldHandler;
 import com.projectstation.network.command.client.ClientCharacterAssignment;
 import com.projectstation.network.command.client.ClientGiveOwnership;
+import com.projectstation.network.command.client.RecieveChatMessage;
 import com.projectstation.network.entity.IEntityNetworkAdapter;
 import com.projectstation.server.entity.ISpawnController;
 import com.projectstation.server.entity.ISpawnControllerListener;
@@ -37,6 +38,7 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
     private final Map<String, IServerEntityNetworkAdapter> entityAdapterMapping;
     private boolean requestedPlayerSpawn = false;
     private String nickname = "";
+    private final List<IClientVisit> broadcastQueue = new ArrayList<>();
 
     public VisitableServerHandler(Map<String, IServerEntityNetworkAdapter> entityAdapterMapping, WorldServer world, String spawnControllerName, IItemFactory itemFactory, IEntityFactory entityFactory, ChannelHandlerContext ctx, IPollRequestHost host) {
         this.ctx = ctx;
@@ -94,6 +96,9 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
             ctx.write(new ClientGiveOwnership(playerEntity.getInstanceName()));
             ctx.flush();
         }
+
+        response.addAll(broadcastQueue);
+        broadcastQueue.clear();
 
         return response;
     }
@@ -162,5 +167,14 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
     @Override
     public IServerEntityNetworkAdapter getAdapter(String entityName) {
         return entityAdapterMapping.get(entityName);
+    }
+
+    @Override
+    public void transmitChatMessage(String message) {
+        if(nickname == null || nickname.length() == 0)
+            return;
+
+        broadcastQueue.add(new RecieveChatMessage(nickname + ": " + message));
+        host.poll();
     }
 }

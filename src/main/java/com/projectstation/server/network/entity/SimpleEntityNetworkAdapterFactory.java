@@ -2,9 +2,7 @@ package com.projectstation.server.network.entity;
 
 import com.jevaengine.spacestation.entity.Infrastructure;
 import com.jevaengine.spacestation.entity.StationEntityFactory;
-import com.projectstation.network.EntityVisit;
 import com.projectstation.network.IClientVisit;
-import com.projectstation.network.WorldVisit;
 import com.projectstation.network.command.client.ClientWorldVisit;
 import com.projectstation.network.command.world.CreateEntityCommand;
 import com.projectstation.network.command.world.SetEntityAnimationDirection;
@@ -44,7 +42,7 @@ public class SimpleEntityNetworkAdapterFactory<T extends IEntity> implements IEn
     }
 
     @Override
-    public IServerEntityNetworkAdapter create(T e, EntityConfigurationDetails config, IEntityNetworlAdapterHost pr) {
+    public IServerEntityNetworkAdapter create(T e, EntityConfigurationDetails config, IEntityNetworkAdapterHost pr) {
         return new SimpleEntityNetworkAdapter(traversable, e, config, pr);
     }
 
@@ -57,13 +55,13 @@ class SimpleEntityNetworkAdapter<T extends IEntity> implements IServerEntityNetw
     private final T entity;
     private boolean locationChanged = true;
     private final EntityConfigurationDetails config;
-    private final IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pollRequest;
+    private final IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pollRequest;
     private final HashMap<String, IAnimationSceneModel.AnimationSceneModelAnimationState> observedStateChanges = new HashMap<>();
     private final SimpleEntityNetworkAdapterFactory.DetectTraversable<T> traversable;
 
     private IAnimationSceneModel model = null;
 
-    public SimpleEntityNetworkAdapter(SimpleEntityNetworkAdapterFactory.DetectTraversable<T> traversable, T entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
+    public SimpleEntityNetworkAdapter(SimpleEntityNetworkAdapterFactory.DetectTraversable<T> traversable, T entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pr) {
         this.entity = entity;
         this.traversable = traversable;
         this.entity.getBody().getObservers().add(new LocationObserver());

@@ -191,7 +191,7 @@ public class WorldServer {
         }
     }
 
-    private <T extends IEntity> IServerEntityNetworkAdapter createNetworkAdapter(Class<T> cls, Object entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost host) {
+    private <T extends IEntity> IServerEntityNetworkAdapter createNetworkAdapter(Class<T> cls, Object entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost host) {
         return netEntityMappings.get(cls).create((T)entity, config, host);
     }
 
@@ -208,7 +208,7 @@ public class WorldServer {
         }
     }
 
-    private class EntityNetworkAdapterHost implements IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost {
+    private class EntityNetworkAdapterHost implements IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost {
         private final String name;
 
         public EntityNetworkAdapterHost(String name) {

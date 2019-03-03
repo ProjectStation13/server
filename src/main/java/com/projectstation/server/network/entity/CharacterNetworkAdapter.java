@@ -3,9 +3,7 @@ package com.projectstation.server.network.entity;
 import com.jevaengine.spacestation.entity.character.ISpaceCharacterStatusObserver;
 import com.jevaengine.spacestation.entity.character.SpaceCharacter;
 import com.jevaengine.spacestation.entity.character.SpaceCharacterAttribute;
-import com.jevaengine.spacestation.entity.character.symptoms.ISymptom;
 import com.jevaengine.spacestation.entity.character.symptoms.ISymptomDetails;
-import com.jevaengine.spacestation.item.StationItemFactory;
 import com.projectstation.network.IClientVisit;
 import com.projectstation.network.WorldVisit;
 import com.projectstation.network.command.client.ClientWorldVisit;
@@ -26,7 +24,6 @@ import io.github.jevaengine.rpg.entity.character.IRpgCharacter;
 import io.github.jevaengine.rpg.item.IImmutableItemStore;
 import io.github.jevaengine.rpg.item.IItem;
 import io.github.jevaengine.rpg.item.IItemSlot;
-import io.github.jevaengine.world.physics.IPhysicsBodyOrientationObserver;
 import io.github.jevaengine.world.steering.ISteeringBehavior;
 
 import java.io.ByteArrayOutputStream;
@@ -38,7 +35,7 @@ import java.util.List;
 public class CharacterNetworkAdapter implements IServerEntityNetworkAdapter {
     private final SpaceCharacter entity;
     private final EntityConfigurationDetails config;
-    private final IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost host;
+    private final IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost host;
     private String nickname = "";
     private boolean nicknameChanged = false;
 
@@ -55,7 +52,7 @@ public class CharacterNetworkAdapter implements IServerEntityNetworkAdapter {
 
     private final List<WorldVisit> observedChanges = new ArrayList<>();
 
-    public CharacterNetworkAdapter(SpaceCharacter entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
+    public CharacterNetworkAdapter(SpaceCharacter entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pr) {
         this.host = pr;
         this.entity = entity;
         this.config = config;

@@ -1,43 +1,28 @@
 package com.projectstation.server.network.entity;
 
 import com.jevaengine.spacestation.entity.projectile.IProjectile;
-import com.jevaengine.spacestation.entity.projectile.LaserProjectile;
 import com.projectstation.network.IClientVisit;
-import com.projectstation.network.WorldVisit;
 import com.projectstation.network.command.client.ClientWorldVisit;
-import com.projectstation.network.command.client.GiveEntityNickname;
 import com.projectstation.network.command.world.*;
 import com.projectstation.network.entity.EntityConfigurationDetails;
 import com.projectstation.network.entity.EntityNetworkAdapterException;
 import com.projectstation.network.entity.IEntityNetworkAdapterFactory;
 import com.projectstation.network.entity.IServerEntityNetworkAdapter;
-import com.projectstation.server.item.ServerStationItemFactory;
 import io.github.jevaengine.config.ValueSerializationException;
 import io.github.jevaengine.config.json.JsonVariable;
-import io.github.jevaengine.math.Vector2F;
-import io.github.jevaengine.math.Vector3F;
-import io.github.jevaengine.rpg.entity.character.IImmutableLoadout;
-import io.github.jevaengine.rpg.entity.character.IMovementResolver;
-import io.github.jevaengine.rpg.entity.character.IRpgCharacter;
-import io.github.jevaengine.rpg.item.IImmutableItemStore;
-import io.github.jevaengine.rpg.item.IItem;
-import io.github.jevaengine.rpg.item.IItemSlot;
-import io.github.jevaengine.world.entity.IEntity;
-import io.github.jevaengine.world.physics.IPhysicsBodyOrientationObserver;
 import io.github.jevaengine.world.steering.ISteeringBehavior;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectileNetworkAdapter implements IServerEntityNetworkAdapter {
     private final IProjectile entity;
     private final EntityConfigurationDetails config;
-    private final IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost host;
+    private final IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost host;
 
-    public ProjectileNetworkAdapter(IProjectile entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
+    public ProjectileNetworkAdapter(IProjectile entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pr) {
         this.host = pr;
         this.entity = entity;
         this.config = config;

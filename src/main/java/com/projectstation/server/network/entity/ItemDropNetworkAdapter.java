@@ -3,25 +3,18 @@ package com.projectstation.server.network.entity;
 import com.jevaengine.spacestation.entity.ItemDrop;
 import com.projectstation.network.IClientVisit;
 import com.projectstation.network.command.client.ClientWorldVisit;
-import com.projectstation.network.command.world.CreateEntityCommand;
 import com.projectstation.network.command.world.CreateItemDropCommand;
-import com.projectstation.network.command.world.SetDoorStateCommand;
 import com.projectstation.network.command.world.SetEntityPositionCommand;
 import com.projectstation.network.entity.EntityConfigurationDetails;
 import com.projectstation.network.entity.EntityNetworkAdapterException;
 import com.projectstation.network.entity.IEntityNetworkAdapterFactory;
 import com.projectstation.network.entity.IServerEntityNetworkAdapter;
 import com.projectstation.server.item.ServerStationItemFactory;
-import io.github.jevaengine.config.ValueSerializationException;
-import io.github.jevaengine.config.json.JsonVariable;
-import io.github.jevaengine.rpg.entity.Door;
 import io.github.jevaengine.world.physics.IPhysicsBodyOrientationObserver;
 import io.github.jevaengine.world.steering.ISteeringBehavior;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +24,9 @@ public class ItemDropNetworkAdapter implements IServerEntityNetworkAdapter {
     private final ItemDrop entity;
     private boolean locationChanged = true;
     private final EntityConfigurationDetails config;
-    private final IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pollRequest;
+    private final IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pollRequest;
 
-    public ItemDropNetworkAdapter(ItemDrop entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworlAdapterHost pr) {
+    public ItemDropNetworkAdapter(ItemDrop entity, EntityConfigurationDetails config, IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost pr) {
         this.entity = entity;
         this.entity.getBody().getObservers().add(new LocationObserver());
         this.config = config;

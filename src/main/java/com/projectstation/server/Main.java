@@ -131,7 +131,7 @@ public class Main implements WindowListener
 					m_frame.setIgnoreRepaint(true);
 					m_frame.setBackground(Color.black);
 					m_frame.setResizable(false);
-					m_frame.setTitle("Project Station");
+					m_frame.setTitle("Project Station - Server");
 					m_frame.setSize(m_displayX, m_displayY);
 					//m_frame.setUndecorated(true);
 					m_frame.setVisible(true);
