@@ -23,6 +23,7 @@ import com.jevaengine.spacestation.IStateContext;
 import com.projectstation.server.gamestates.ConfigureServerMenu;
 import io.github.jevaengine.IEngineThreadPool;
 import io.github.jevaengine.audio.IAudioClipFactory;
+import io.github.jevaengine.config.IConfigurationFactory;
 import io.github.jevaengine.game.DefaultGame;
 import io.github.jevaengine.graphics.IFontFactory;
 import io.github.jevaengine.graphics.IRenderable;
@@ -64,11 +65,13 @@ public final class ServerStationGame extends DefaultGame implements IStateContex
 	private final IParallelEntityFactory m_parallelEntityFactory;
 	private final IEffectMapFactory m_effectMapFactory;
 	private final IItemFactory m_itemFactory;
+	private final IConfigurationFactory m_configFactory;
 
-	public ServerStationGame(IItemFactory itemFactory, IFontFactory fontFactory, IPhysicsWorldFactory physicsWorldFactory, IEngineThreadPool threadPool, IEffectMapFactory effectMapFactory, IEntityFactory entityFactory, IInputSource inputSource, IWindowFactory windowFactory, IWorldFactory worldFactory, ISpriteFactory spriteFactory, IAudioClipFactory audioClipFactory, Vector2D resolution)
+	public ServerStationGame(IItemFactory itemFactory, IFontFactory fontFactory, IPhysicsWorldFactory physicsWorldFactory, IEngineThreadPool threadPool, IEffectMapFactory effectMapFactory, IEntityFactory entityFactory, IInputSource inputSource, IWindowFactory windowFactory, IWorldFactory worldFactory, ISpriteFactory spriteFactory, IAudioClipFactory audioClipFactory, IConfigurationFactory configurationFactory, Vector2D resolution)
 	{
 		super(inputSource, resolution);
-	
+
+		m_configFactory = configurationFactory;
 		try
 		{
 			m_cursor = spriteFactory.create(URI.create("file:///ui/cursor.jsf"));
@@ -93,6 +96,11 @@ public final class ServerStationGame extends DefaultGame implements IStateContex
 
 		m_state = new EntryState();
 		m_state.enter(this);
+	}
+
+	@Override
+	public IConfigurationFactory getConfigFactory() {
+		return m_configFactory;
 	}
 
 	@Override

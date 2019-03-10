@@ -1,6 +1,7 @@
 package com.projectstation.server.network;
 
 import com.projectstation.network.*;
+import com.projectstation.network.command.client.ClientDisconnect;
 import com.projectstation.network.command.client.ClientWorldVisit;
 import com.projectstation.network.command.world.RemoveEntityCommand;
 import com.projectstation.network.entity.*;
@@ -49,10 +50,13 @@ public class WorldServer {
 
     private final WorldServerHandler serverHandler = new WorldServerHandler();
 
+    private final int maxPlayers;
+
     EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public WorldServer(IItemFactory itemFactory, IEntityFactory entityFactory, World world, int port) {
+    public WorldServer(IItemFactory itemFactory, IEntityFactory entityFactory, World world, int port, int maxPlayers) {
+        this.maxPlayers = maxPlayers;
         this.world = world;
         this.entityFactory = entityFactory;
         this.itemFactory = itemFactory;
@@ -68,6 +72,7 @@ public class WorldServer {
     public World getWorld() {
         return world;
     }
+
     public VisitableServerHandler getNickname(String nickname) {
         for(VisitableServerHandler h : clientHandlers.values())
         {
@@ -76,6 +81,10 @@ public class WorldServer {
         }
 
         return null;
+    }
+
+    public int getPlayerCount() {
+        return clientHandlers.size();
     }
 
     private void initNetwork(int port) {
@@ -249,16 +258,21 @@ public class WorldServer {
 
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-            VisitableServerHandler handler = new VisitableServerHandler(entityNetworkAdapters, WorldServer.this, SPAWN_CONTROLLER_NAME, itemFactory, entityFactory, ctx, new IPollRequestHost() {
-                @Override
-                public void poll() {
-                    entityPollRequests.add(clientHandlers.get(ctx));
-                }
-            });
+            if (clientHandlers.size() >= maxPlayers) {
+                ctx.writeAndFlush(new ClientDisconnect("Server is full"));
+                ctx.disconnect();
+            } else {
+                VisitableServerHandler handler = new VisitableServerHandler(entityNetworkAdapters, WorldServer.this, SPAWN_CONTROLLER_NAME, itemFactory, entityFactory, ctx, new IPollRequestHost() {
+                    @Override
+                    public void poll() {
+                        entityPollRequests.add(clientHandlers.get(ctx));
+                    }
+                });
 
-            clientHandlers.put(ctx, handler);
+                clientHandlers.put(ctx, handler);
 
-            entityPollRequests.add(handler);
+                entityPollRequests.add(handler);
+            }
         }
 
         @Override

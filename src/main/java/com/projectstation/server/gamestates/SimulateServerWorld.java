@@ -20,34 +20,16 @@ package com.projectstation.server.gamestates;
 
 import com.jevaengine.spacestation.IState;
 import com.jevaengine.spacestation.IStateContext;
-import com.jevaengine.spacestation.StationProjectionFactory;
-import com.jevaengine.spacestation.gamestates.MainMenu;
-import com.jevaengine.spacestation.gas.GasSimulationNetwork;
-import com.jevaengine.spacestation.ui.GasDebugFactory;
-import com.jevaengine.spacestation.ui.HudFactory;
-import com.jevaengine.spacestation.ui.HudFactory.Hud;
-import com.jevaengine.spacestation.ui.InventoryHudFactory;
-import com.jevaengine.spacestation.ui.InventoryHudFactory.InventoryHud;
-import com.jevaengine.spacestation.ui.LoadoutHudFactory;
-import com.jevaengine.spacestation.ui.LoadoutHudFactory.LoadoutHud;
-import com.jevaengine.spacestation.ui.playing.PlayingWindowFactory;
-import com.jevaengine.spacestation.ui.playing.PlayingWindowFactory.PlayingWindow;
+import com.projectstation.server.MasterServerCommunicator;
+import com.projectstation.server.ServerConfig;
 import com.projectstation.server.network.WorldServer;
-import io.github.jevaengine.audio.IAudioClipFactory;
-import io.github.jevaengine.graphics.ISpriteFactory;
-import io.github.jevaengine.math.Vector2D;
-import io.github.jevaengine.rpg.entity.character.IRpgCharacter;
-import io.github.jevaengine.rpg.entity.character.IRpgCharacter.NullRpgCharacter;
-import io.github.jevaengine.ui.IWindowFactory;
-import io.github.jevaengine.ui.IWindowFactory.WindowConstructionException;
-import io.github.jevaengine.world.IParallelWorldFactory;
+import io.github.jevaengine.config.IConfigurationFactory;
+import io.github.jevaengine.config.ValueSerializationException;
 import io.github.jevaengine.world.World;
-import io.github.jevaengine.world.entity.IEntityFactory;
-import io.github.jevaengine.world.scene.ISceneBufferFactory;
-import io.github.jevaengine.world.scene.TopologicalOrthographicProjectionSceneBufferFactory;
-import io.github.jevaengine.world.scene.camera.FollowCamera;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
 
 /**
  *
@@ -55,12 +37,13 @@ import org.slf4j.LoggerFactory;
  */
 public class SimulateServerWorld implements IState {
 
-	private static final int PORT = 7345;
+	private static final String CONFIG_FILE = "server.json";
 
 	private IStateContext context;
 	private final World world;
 	private final Logger logger = LoggerFactory.getLogger(SimulateServerWorld.class);
 
+	private MasterServerCommunicator masterCommunicator;
 	private WorldServer worldServer;
 
 	public SimulateServerWorld(World world) {
@@ -69,17 +52,32 @@ public class SimulateServerWorld implements IState {
 
 	@Override
 	public void enter(IStateContext context) {
+
+		ServerConfig config = null;
+
+		try {
+			config = context.getConfigFactory().create(URI.create(CONFIG_FILE)).getValue(ServerConfig.class);
+		} catch (IConfigurationFactory.ConfigurationConstructionException | ValueSerializationException e) {
+			logger.error("Error loading config file.");
+			context.setState(new ConfigureServerMenu());
+			return;
+		}
 		this.context = context;
-		this.worldServer = new WorldServer(context.getItemFactory(), context.getEntityFactory(), world, PORT);
+		this.worldServer = new WorldServer(context.getItemFactory(), context.getEntityFactory(), world, config.port, config.maxPlayers);
+		masterCommunicator = new MasterServerCommunicator(config.masterHost, config.masterPort, config.port, config.name, config.description, config.maxPlayers);
 	}
 
 	@Override
 	public void leave() {
+		if(masterCommunicator != null)
+			masterCommunicator.stop();
 	}
 
 	@Override
 	public void update(int deltaTime) {
 		worldServer.update(deltaTime);
 		world.update(deltaTime);
+
+		masterCommunicator.setPlayerCount(worldServer.getPlayerCount());
 	}
 }
