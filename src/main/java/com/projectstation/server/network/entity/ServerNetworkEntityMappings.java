@@ -52,5 +52,6 @@ public class ServerNetworkEntityMappings extends EntityNetworkAdapterMapping<ISe
         register(NetworkPowerMeter.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
         register(Capacitor.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
         register(Alternator.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(Dcpu.class, new DcpuEntityNetworkAdapterFactory());
     }
 }
