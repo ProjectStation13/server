@@ -49,9 +49,10 @@ public class ServerNetworkEntityMappings extends EntityNetworkAdapterMapping<ISe
         register(LiquidTank.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
         register(LiquidPump.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
         register(PressureCollapseValve.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
-        register(NetworkPowerMeter.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(NetworkPowerMeter.class, new SimpleEntityNetworkAdapterFactory( (inf) -> false));
         register(Capacitor.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
         register(Alternator.class, new SimpleEntityNetworkAdapterFactory( (inf) -> true));
+        register(NetworkInterfaceController.class, new SimpleEntityNetworkAdapterFactory( (inf) -> false));
         register(Dcpu.class, new DcpuEntityNetworkAdapterFactory());
     }
 }

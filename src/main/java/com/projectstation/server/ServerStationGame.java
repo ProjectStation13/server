@@ -20,10 +20,12 @@ package com.projectstation.server;
 
 import com.jevaengine.spacestation.IState;
 import com.jevaengine.spacestation.IStateContext;
+import com.jevaengine.spacestation.NullState;
 import com.projectstation.server.gamestates.ConfigureServerMenu;
 import io.github.jevaengine.IEngineThreadPool;
 import io.github.jevaengine.audio.IAudioClipFactory;
 import io.github.jevaengine.config.IConfigurationFactory;
+import io.github.jevaengine.config.ValueSerializationException;
 import io.github.jevaengine.game.DefaultGame;
 import io.github.jevaengine.graphics.IFontFactory;
 import io.github.jevaengine.graphics.IRenderable;
@@ -49,6 +51,8 @@ import java.net.URI;
 
 public final class ServerStationGame extends DefaultGame implements IStateContext
 {
+	private static final String CONFIG_FILE = "server.json";
+
 	private IRenderable m_cursor;
 	private IState m_state;
 	
@@ -94,7 +98,17 @@ public final class ServerStationGame extends DefaultGame implements IStateContex
 		m_parallelWorldFactory = new ThreadPooledWorldFactory(worldFactory, threadPool);
 
 
-		m_state = new EntryState();
+		ServerConfig config;
+
+		try {
+			config = configurationFactory.create(URI.create(CONFIG_FILE)).getValue(ServerConfig.class);
+		} catch (IConfigurationFactory.ConfigurationConstructionException | ValueSerializationException e) {
+			m_logger.error("Error loading config file.");
+			m_state = new NullState();
+			return;
+		}
+
+		m_state = new EntryState(config);
 		m_state.enter(this);
 	}
 
@@ -180,7 +194,12 @@ public final class ServerStationGame extends DefaultGame implements IStateContex
 	private static class EntryState implements IState
 	{
 		private IStateContext m_context;
-		
+		private final ServerConfig m_config;
+
+		public EntryState(ServerConfig config) {
+			this.m_config = config;
+		}
+
 		@Override
 		public void enter(IStateContext context)
 		{
@@ -193,7 +212,7 @@ public final class ServerStationGame extends DefaultGame implements IStateContex
 		@Override
 		public void update(int deltaTime)
 		{
-			m_context.setState(new ConfigureServerMenu());
+			m_context.setState(new ConfigureServerMenu(m_config));
 		}
 	}
 }

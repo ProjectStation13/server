@@ -36,32 +36,21 @@ import java.net.URI;
  * @author Jeremy
  */
 public class SimulateServerWorld implements IState {
-
-	private static final String CONFIG_FILE = "server.json";
-
 	private IStateContext context;
 	private final World world;
 	private final Logger logger = LoggerFactory.getLogger(SimulateServerWorld.class);
 
 	private MasterServerCommunicator masterCommunicator;
 	private WorldServer worldServer;
+	private final ServerConfig config;
 
-	public SimulateServerWorld(World world) {
+	public SimulateServerWorld(ServerConfig config, World world) {
 		this.world = world;
+		this.config = config;
 	}
 
 	@Override
 	public void enter(IStateContext context) {
-
-		ServerConfig config = null;
-
-		try {
-			config = context.getConfigFactory().create(URI.create(CONFIG_FILE)).getValue(ServerConfig.class);
-		} catch (IConfigurationFactory.ConfigurationConstructionException | ValueSerializationException e) {
-			logger.error("Error loading config file.");
-			context.setState(new ConfigureServerMenu());
-			return;
-		}
 		this.context = context;
 		this.worldServer = new WorldServer(context.getItemFactory(), context.getEntityFactory(), world, config.port, config.maxPlayers);
 		masterCommunicator = new MasterServerCommunicator(config.masterHost, config.masterPort, config.port, config.name, config.description, config.maxPlayers);

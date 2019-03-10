@@ -46,6 +46,7 @@ import io.github.jevaengine.game.IRenderer;
 import io.github.jevaengine.graphics.*;
 import io.github.jevaengine.joystick.FrameInputSource;
 import io.github.jevaengine.joystick.IInputSource;
+import io.github.jevaengine.joystick.NullInputSource;
 import io.github.jevaengine.rpg.dialogue.IDialogueRouteFactory;
 import io.github.jevaengine.rpg.dialogue.ScriptedDialogueRouteFactory;
 import io.github.jevaengine.rpg.entity.RpgEntityFactory;
@@ -61,10 +62,13 @@ import io.github.jevaengine.world.TiledEffectMapFactory;
 import io.github.jevaengine.world.entity.IEntityFactory;
 import io.github.jevaengine.world.pathfinding.AStarRouteFactory;
 import io.github.jevaengine.world.pathfinding.IRouteFactory;
+import io.github.jevaengine.world.scene.camera.NullRenderer;
 import io.github.jevaengine.world.scene.model.*;
 import io.github.jevaengine.world.scene.model.particle.DefaultParticleEmitterFactory;
 import io.github.jevaengine.world.scene.model.particle.IParticleEmitterFactory;
 import io.github.jevaengine.world.scene.model.sprite.SpriteSceneModelFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.swing.*;
@@ -76,14 +80,7 @@ import java.nio.file.Paths;
 
 public class Main implements WindowListener
 {
-	private static final int WINX = 1280;
-	private static final int WINY = 1024;
-
-	private static boolean IS_FULL_SCREEN = false;
-	private int m_displayX = WINX;
-	private int m_displayY = WINY;
-
-	private JFrame m_frame;
+	private final Logger m_logger = LoggerFactory.getLogger(Main.class);
 	private GameDriver m_gameDriver;
 	
 	public static void main(String[] args)
@@ -95,61 +92,11 @@ public class Main implements WindowListener
 
 	public void entry(String[] args)
 	{
-		m_frame = new JFrame();
-		try
-		{
-			if (args.length >= 1)
-			{
-				String[] resolution = args[0].split("x");
-
-				if (resolution.length != 2)
-					throw new RuntimeException("Invalid resolution");
-
-				try
-				{
-					m_displayX = Integer.parseInt(resolution[0]);
-					m_displayY = Integer.parseInt(resolution[1]);
-				} catch (NumberFormatException e)
-				{
-					throw new RuntimeException("Resolution improperly formed");
-				}
-			}
-
-			if (m_displayX <= 0 || m_displayY <= 0)
-			{
-				m_displayX = WINX;
-				m_displayY = WINY;
-			}
-			
-			SwingUtilities.invokeAndWait(new Runnable()
-			{
-
-				public void run()
-				{
-					m_frame.setCursor(Toolkit.getDefaultToolkit().createCustomCursor(Toolkit.getDefaultToolkit().getImage(""), new Point(), "trans"));
-
-					m_frame.setIgnoreRepaint(true);
-					m_frame.setBackground(Color.black);
-					m_frame.setResizable(false);
-					m_frame.setTitle("Project Station - Server");
-					m_frame.setSize(m_displayX, m_displayY);
-					//m_frame.setUndecorated(true);
-					m_frame.setVisible(true);
-					m_frame.addWindowListener(Main.this);
-					m_frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-				}
-			});
-		} catch (RuntimeException | InterruptedException | InvocationTargetException ex)
-		{
-			throw new RuntimeException(ex);
-			//JOptionPane.showMessageDialog(null, "An error occured initializing the game: " + ex);
-			//return;
-		}
-
+		m_logger.info("Initializing Server Components");
 		Injector injector = Guice.createInjector(new EngineModule());
 		m_gameDriver = injector.getInstance(GameDriver.class);
+		m_logger.info("Starting Server...");
 		m_gameDriver.begin();
-		//m_frame.dispose();
 	}
 
 	@Override
@@ -164,7 +111,7 @@ public class Main implements WindowListener
 		protected void configure()
 		{
 			bind(IRouteFactory.class).to(AStarRouteFactory.class);
-			bind(IInputSource.class).toInstance(FrameInputSource.create(m_frame));
+			bind(IInputSource.class).toInstance(new NullInputSource());
 			bind(IGameFactory.class).to(ServerStationGameFactory.class);
 			bind(IRpgCharacterFactory.class).to(SpaceCharacterFactory.class);
 			bind(IEntityFactory.class).toProvider(new Provider<IEntityFactory>() {
@@ -252,7 +199,7 @@ public class Main implements WindowListener
 			
 			bind(IAudioClipFactory.class).toInstance(new NullAudioClipFactory());
 			bind(IEffectMapFactory.class).to(TiledEffectMapFactory.class);
-			bind(IRenderer.class).toInstance(new FrameRenderer(m_frame, IS_FULL_SCREEN, RenderFitMode.Stretch));
+			bind(IRenderer.class).toInstance(new NullRenderer());
 			bind(IParticleEmitterFactory.class).to(DefaultParticleEmitterFactory.class);
 			
 			bind(IAssetStreamFactory.class).toProvider(new Provider<IAssetStreamFactory>() {

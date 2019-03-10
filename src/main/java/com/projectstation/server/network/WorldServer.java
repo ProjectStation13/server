@@ -19,6 +19,8 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
@@ -67,6 +69,8 @@ public class WorldServer {
         }
 
         initNetwork(port);
+
+        logger.info("Server listening on port " + port);
     }
 
     public World getWorld() {
@@ -96,6 +100,10 @@ public class WorldServer {
                     @Override
                     public void initChannel(SocketChannel ch) throws Exception {
                         ChannelPipeline p = ch.pipeline();
+
+                        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
+                        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
+
                         p.addLast(
                                 new ObjectEncoder(),
                                 new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
