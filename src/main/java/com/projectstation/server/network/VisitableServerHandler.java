@@ -1,9 +1,6 @@
 package com.projectstation.server.network;
 
-import com.projectstation.network.IClientVisit;
-import com.projectstation.network.IPollRequestHost;
-import com.projectstation.network.IServerPollable;
-import com.projectstation.network.IServerWorldHandler;
+import com.projectstation.network.*;
 import com.projectstation.network.command.client.ClientCharacterAssignment;
 import com.projectstation.network.command.client.ClientGiveOwnership;
 import com.projectstation.network.command.client.RecieveChatMessage;
@@ -134,6 +131,11 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
     @Override
     public void unauthorizeOwnership(String entityName) {
         ownedEntities.remove(entityName);
+    }
+
+    @Override
+    public WorldServerHistory getHistory() {
+        return world.getHistory();
     }
 
     @Override
