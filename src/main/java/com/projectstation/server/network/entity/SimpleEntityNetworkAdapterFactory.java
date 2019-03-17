@@ -2,6 +2,9 @@ package com.projectstation.server.network.entity;
 
 import com.jevaengine.spacestation.entity.Infrastructure;
 import com.jevaengine.spacestation.entity.StationEntityFactory;
+import com.jevaengine.spacestation.entity.atmos.LiquidPump;
+import com.jevaengine.spacestation.entity.network.NetworkAirQualitySensor;
+import com.jevaengine.spacestation.entity.network.NetworkWire;
 import com.projectstation.network.IClientVisit;
 import com.projectstation.network.command.client.ClientWorldVisit;
 import com.projectstation.network.command.world.CreateEntityCommand;
@@ -30,15 +33,9 @@ import java.util.Map;
 public class SimpleEntityNetworkAdapterFactory<T extends IEntity> implements IEntityNetworkAdapterFactory<IServerEntityNetworkAdapter, T> {
 
     private final DetectTraversable<T> traversable;
-    private final boolean interactable;
-
-    public SimpleEntityNetworkAdapterFactory(boolean interactable, DetectTraversable<T> traversable) {
-        this.traversable = traversable;
-        this.interactable = interactable;
-    }
 
     public SimpleEntityNetworkAdapterFactory(DetectTraversable<T> traversable) {
-        this(false, traversable);
+        this.traversable = traversable;
     }
 
     @Override
@@ -107,6 +104,7 @@ class SimpleEntityNetworkAdapter<T extends IEntity> implements IServerEntityNetw
 
             String json = new String(serializedJson.toByteArray());
             response.add(new ClientWorldVisit(new CreateEntityCommand(entity.getInstanceName(), typeName, configContext.toString(), json, entity.getBody().getLocation(), entity.getBody().getDirection())));
+            response.add(new ClientWorldVisit(new SetEntityAnimationDirection(entity.getInstanceName(), entity.getModel().getDirection())));
 
             return response;
         } catch(ValueSerializationException | IOException | NoSuchChildVariableException ex) {
@@ -160,14 +158,7 @@ class SimpleEntityNetworkAdapter<T extends IEntity> implements IServerEntityNetw
 
     @Override
     public List<IClientVisit> createInitializeSteps() throws EntityNetworkAdapterException {
-
         List<IClientVisit> response = new ArrayList<>();
-
-        URI configContext = config.getConfigContext();
-
-        if (configContext == null) {
-            configContext = URI.create("file:///");
-        }
 
         if(entity instanceof Infrastructure)
             response.addAll(createInfrastructureInitializationSteps());

@@ -52,6 +52,8 @@ public class WorldServer {
 
     private final WorldServerHandler serverHandler = new WorldServerHandler();
 
+    private final WorldServerHistory history = new WorldServerHistory();
+
     private final int maxPlayers;
 
     EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -75,6 +77,10 @@ public class WorldServer {
 
     public World getWorld() {
         return world;
+    }
+
+    public WorldServerHistory getHistory() {
+        return history;
     }
 
     public VisitableServerHandler getNickname(String nickname) {
@@ -131,6 +137,16 @@ public class WorldServer {
         });
     }
 
+    private void broadcastClients(IClientVisit v) {
+        ChannelGroup clients = serverHandler.getWorldClients();
+        clients.write(v);
+        history.record(v);
+    }
+
+    private void flushClients() {
+        serverHandler.getWorldClients().flush();
+    }
+
     public void update(int deltaTime) {
 
         if(messageQueue.size() > 3) {
@@ -171,12 +187,10 @@ public class WorldServer {
         }
 
 
-        ChannelGroup worldClients = serverHandler.getWorldClients();
-
         while(!delta.isEmpty())
-            worldClients.write(delta.poll());
+            broadcastClients(delta.poll());
 
-        worldClients.flush();
+        flushClients();
     }
 
     private void registerNetworkEntity(IEntity e) {
@@ -195,11 +209,10 @@ public class WorldServer {
             entityPollRequests.add(net);
 
             try {
-                ChannelGroup clients = serverHandler.getWorldClients();
                 for(IClientVisit v : net.createInitializeSteps())
-                    clients.write(v);
+                    broadcastClients(v);
 
-                clients.flush();
+                flushClients();
             } catch (EntityNetworkAdapterException ex) {
                 logger.error("Unable to send initialize steps for new world entity.", ex);
             }
@@ -220,9 +233,11 @@ public class WorldServer {
         if(adapter != null) {
             entityNetworkAdapters.remove(e.getInstanceName());
             entityPollRequests.remove(adapter);
-            ChannelGroup clients = serverHandler.getWorldClients();
-            clients.writeAndFlush(new ClientWorldVisit(new RemoveEntityCommand(e.getInstanceName())));
+            broadcastClients(new ClientWorldVisit(new RemoveEntityCommand(e.getInstanceName())));
+            flushClients();
         }
+
+        history.eraseEntityHistory(e.getInstanceName());
     }
 
     private class EntityNetworkAdapterHost implements IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost {
