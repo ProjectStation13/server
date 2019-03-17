@@ -141,7 +141,6 @@ public class WorldServer {
         ChannelGroup clients = serverHandler.getWorldClients();
         clients.write(v);
         history.record(v);
-        logger.info("History Size: " + history.size());
     }
 
     private void flushClients() {
