@@ -240,8 +240,8 @@ public class ServerStationEntityFactory implements IEntityFactory {
 			public IEntity create(ServerStationEntityFactory entityFactory, String instanceName, URI context, IImmutableVariable auxConfig) throws EntityConstructionException {
 				try {
 					RandomSpawnControllerDeclaration decl = auxConfig.getValue(RandomSpawnControllerDeclaration.class);
-					return new RandomSpawnController(instanceName, entityFactory.m_parallelEntityFactory, decl.type, new URI(decl.config), decl.spawnDepth);
-				} catch (ValueSerializationException | URISyntaxException e) {
+					return new RandomSpawnController(instanceName, entityFactory.m_parallelEntityFactory, decl.spawnDepth);
+				} catch (ValueSerializationException e) {
 					throw new EntityConstructionException(e);
 				}
 			}
@@ -276,23 +276,16 @@ public class ServerStationEntityFactory implements IEntityFactory {
 	}
 
 	public static final class RandomSpawnControllerDeclaration implements ISerializable {
-
-		public String type;
-		public String config;
 		public float spawnDepth;
 
 		@Override
 		public void serialize(IVariable target) throws ValueSerializationException {
-			target.addChild("type").setValue(type);
-			target.addChild("config").setValue(config);
 			target.addChild("spawnDepth").setValue(spawnDepth);
 		}
 
 		@Override
 		public void deserialize(IImmutableVariable source) throws ValueSerializationException {
 			try {
-				type = source.getChild("type").getValue(String.class);
-				config = source.getChild("config").getValue(String.class);
 				spawnDepth = source.getChild("spawnDepth").getValue(Double.class).floatValue();
 			} catch (NoSuchChildVariableException ex) {
 				throw new ValueSerializationException(ex);

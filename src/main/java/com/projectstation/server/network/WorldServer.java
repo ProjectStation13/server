@@ -1,5 +1,6 @@
 package com.projectstation.server.network;
 
+import com.jevaengine.spacestation.ui.selectclass.CharacterClassDescription;
 import com.projectstation.network.*;
 import com.projectstation.network.command.client.ClientDisconnect;
 import com.projectstation.network.command.client.ClientWorldVisit;
@@ -7,6 +8,8 @@ import com.projectstation.network.command.world.RemoveEntityCommand;
 import com.projectstation.network.entity.*;
 import com.projectstation.server.entity.ServerStationEntityFactory;
 import com.projectstation.server.network.entity.ServerNetworkEntityMappings;
+import io.github.jevaengine.config.IConfigurationFactory;
+import io.github.jevaengine.config.ValueSerializationException;
 import io.github.jevaengine.math.Vector3F;
 import io.github.jevaengine.rpg.item.IItemFactory;
 import io.github.jevaengine.world.World;
@@ -56,11 +59,14 @@ public class WorldServer {
 
     private final int maxPlayers;
 
-    EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-    EventLoopGroup workerGroup = new NioEventLoopGroup();
+    private EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+    private EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public WorldServer(IItemFactory itemFactory, IEntityFactory entityFactory, World world, int port, int maxPlayers) {
+    private List<CharacterClassDescription> availableRoles;
+
+    public WorldServer(IItemFactory itemFactory, IEntityFactory entityFactory, World world, int port, int maxPlayers, List<CharacterClassDescription> availableRoles) {
         this.maxPlayers = maxPlayers;
+        this.availableRoles = new ArrayList<>(availableRoles);
         this.world = world;
         this.entityFactory = entityFactory;
         this.itemFactory = itemFactory;
@@ -238,6 +244,10 @@ public class WorldServer {
         }
 
         history.eraseEntityHistory(e.getInstanceName());
+    }
+
+    public List<CharacterClassDescription> getAvailableRoles() {
+        return availableRoles;
     }
 
     private class EntityNetworkAdapterHost implements IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost {

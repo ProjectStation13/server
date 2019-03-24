@@ -1,8 +1,10 @@
 package com.projectstation.server.network;
 
+import com.jevaengine.spacestation.ui.selectclass.CharacterClassDescription;
 import com.projectstation.network.*;
 import com.projectstation.network.command.client.ClientCharacterAssignment;
 import com.projectstation.network.command.client.ClientGiveOwnership;
+import com.projectstation.network.command.client.ClientRequestRoleSelect;
 import com.projectstation.network.command.client.RecieveChatMessage;
 import com.projectstation.network.entity.IEntityNetworkAdapter;
 import com.projectstation.server.entity.ISpawnController;
@@ -37,6 +39,9 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
     private String nickname = "";
     private final List<IClientVisit> broadcastQueue = new ArrayList<>();
 
+    private CharacterClassDescription selectedRole = null;
+    private boolean requestedRole = false;
+
     public VisitableServerHandler(Map<String, IServerEntityNetworkAdapter> entityAdapterMapping, WorldServer world, String spawnControllerName, IItemFactory itemFactory, IEntityFactory entityFactory, ChannelHandlerContext ctx, IPollRequestHost host) {
         this.ctx = ctx;
         this.entityAdapterMapping = entityAdapterMapping;
@@ -61,6 +66,10 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
         return nickname;
     }
 
+    public CharacterClassDescription getSelectedRole() {
+        return selectedRole;
+    }
+
     public List<IClientVisit> poll(int deltaTime) {
         List<IClientVisit> response = new ArrayList<>();
 
@@ -69,7 +78,11 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
             playerAdapter.setNickname(nickname);
         }
 
-        if(playerEntity == null && !requestedPlayerSpawn && nickname.length() > 0) {
+        if(selectedRole == null && !requestedRole)
+            response.add(new ClientRequestRoleSelect(world.getAvailableRoles()));
+
+        if(playerEntity == null && selectedRole != null && !requestedPlayerSpawn && nickname.length() > 0) {
+            requestedRole = false;
             requestedPlayerSpawn = true;
             ISpawnController controller = world.getWorld().getEntities().getByName(ISpawnController.class, spawnControllerName);
 
@@ -80,9 +93,10 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
                     @Override
                     public void spawnedCharacter(IEntity character) {
                         playerEntity = character;
+                        playerEntity.getObservers().add(new PlayerEntityObserver(character));
                         host.poll();
                     }
-                });
+                }, "character", selectedRole.demo);
             }
         } else if(playerEntity != null && !ownedEntities.contains(playerEntity.getInstanceName())) {
             authorizeOwnership(playerEntity.getInstanceName());
@@ -178,5 +192,43 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
 
         broadcastQueue.add(new RecieveChatMessage(nickname + ": " + message));
         host.poll();
+    }
+
+    @Override
+    public boolean selectClass(CharacterClassDescription cls) {
+        if(!world.getAvailableRoles().contains(cls))
+            return false;
+
+        selectedRole = cls;
+        host.poll();
+        return true;
+    }
+
+    @Override
+    public List<CharacterClassDescription> getAvailableRoles() {
+        return world.getAvailableRoles();
+    }
+
+    private final class PlayerEntityObserver implements IEntity.IEntityWorldObserver {
+        private final IEntity entity;
+
+        public PlayerEntityObserver(IEntity entity) {
+            this.entity = entity;
+        }
+
+        @Override
+        public void enterWorld() {
+
+        }
+
+        @Override
+        public void leaveWorld() {
+            playerEntity = null;
+            selectedRole = null;
+            requestedRole = false;
+            requestedPlayerSpawn = false;
+            host.poll();
+            entity.getObservers().remove(this);
+        }
     }
 }

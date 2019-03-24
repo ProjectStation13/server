@@ -41,21 +41,17 @@ public class RandomSpawnController implements ISpawnController {
     private Queue<CreatedEntity> created = new ConcurrentLinkedQueue<>();
     private IParallelEntityFactory entityFactory;
 
-    private final String entityType;
-    private final URI entityConfig;
     private final float spawnDepth;
 
-    public RandomSpawnController(String instanceName, IParallelEntityFactory entityFactory, String entityTypeName, URI config, float spawnDepth) {
+    public RandomSpawnController(String instanceName, IParallelEntityFactory entityFactory, float spawnDepth) {
         this.instanceName = instanceName;
         this.entityFactory = entityFactory;
-        this.entityType = entityTypeName;
-        this.entityConfig = config;
         this.spawnDepth = spawnDepth;
     }
 
     @Override
-    public void create(ISpawnControllerListener listener) {
-        entityFactory.create(entityType, null, entityConfig, new IInitializationMonitor<IEntity, IEntityFactory.EntityConstructionException>() {
+    public void create(ISpawnControllerListener listener, String type, URI config) {
+        entityFactory.create(type, null, config, new IInitializationMonitor<IEntity, IEntityFactory.EntityConstructionException>() {
             @Override
             public void completed(FutureResult<IEntity, IEntityFactory.EntityConstructionException> result) {
                 try {
