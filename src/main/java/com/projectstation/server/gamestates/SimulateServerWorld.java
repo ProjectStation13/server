@@ -55,19 +55,10 @@ public class SimulateServerWorld implements IState {
 		this.config = config;
 	}
 
-	private List<CharacterClassDescription> loadClassDescriptions() {
-		try {
-			return Arrays.asList(context.getConfigFactory().create(CHARACTER_CLASSES).getValues(CharacterClassDescription[].class));
-		} catch (ValueSerializationException | IConfigurationFactory.ConfigurationConstructionException e) {
-			logger.error("Error get available classes.", e);
-			return new ArrayList<>();
-		}
-	}
-
 	@Override
 	public void enter(IStateContext context) {
 		this.context = context;
-		this.worldServer = new WorldServer(context.getItemFactory(), context.getEntityFactory(), world, config.port, config.maxPlayers, loadClassDescriptions());
+		this.worldServer = new WorldServer(context.getItemFactory(), context.getEntityFactory(), world, config.port, config.maxPlayers);
 		masterCommunicator = new MasterServerCommunicator(config.masterHost, config.masterPort, config.port, config.name, config.description, config.maxPlayers);
 	}
 

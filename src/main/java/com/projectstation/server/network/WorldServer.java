@@ -62,11 +62,8 @@ public class WorldServer {
     private EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     private EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    private List<CharacterClassDescription> availableRoles;
-
-    public WorldServer(IItemFactory itemFactory, IEntityFactory entityFactory, World world, int port, int maxPlayers, List<CharacterClassDescription> availableRoles) {
+    public WorldServer(IItemFactory itemFactory, IEntityFactory entityFactory, World world, int port, int maxPlayers) {
         this.maxPlayers = maxPlayers;
-        this.availableRoles = new ArrayList<>(availableRoles);
         this.world = world;
         this.entityFactory = entityFactory;
         this.itemFactory = itemFactory;
@@ -244,10 +241,6 @@ public class WorldServer {
         }
 
         history.eraseEntityHistory(e.getInstanceName());
-    }
-
-    public List<CharacterClassDescription> getAvailableRoles() {
-        return availableRoles;
     }
 
     private class EntityNetworkAdapterHost implements IEntityNetworkAdapterFactory.IEntityNetworkAdapterHost {

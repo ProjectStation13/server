@@ -59,10 +59,10 @@ public class MasterServerCommunicator {
             channel.await();
 
             if(!channel.isSuccess())
-                logger.error("Unable to establish connection", channel.cause());
+                logger.error("Unable to establish connection to Master Server", channel.cause());
 
         } catch (InterruptedException ex) {
-            logger.error("Unable to establish connection", ex);
+            logger.error("Unable to establish connection to Master Server", ex);
             Thread.currentThread().interrupt();
         }
     }

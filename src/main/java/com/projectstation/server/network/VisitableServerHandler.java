@@ -79,7 +79,7 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
         }
 
         if(selectedRole == null && !requestedRole)
-            response.add(new ClientRequestRoleSelect(world.getAvailableRoles()));
+            response.add(new ClientRequestRoleSelect(getAvailableRoles()));
 
         if(playerEntity == null && selectedRole != null && !requestedPlayerSpawn && nickname.length() > 0) {
             requestedRole = false;
@@ -96,7 +96,14 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
                         playerEntity.getObservers().add(new PlayerEntityObserver(character));
                         host.poll();
                     }
-                }, "character", selectedRole.demo);
+
+                    @Override
+                    public void spawnError(IEntityFactory.EntityConstructionException e) {
+                        selectedRole = null;
+                        requestedRole = false;
+                        logger.error("Error spawning character", e);
+                    }
+                }, selectedRole);
             }
         } else if(playerEntity != null && !ownedEntities.contains(playerEntity.getInstanceName())) {
             authorizeOwnership(playerEntity.getInstanceName());
@@ -196,7 +203,7 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
 
     @Override
     public boolean selectClass(CharacterClassDescription cls) {
-        if(!world.getAvailableRoles().contains(cls))
+        if(!getAvailableRoles().contains(cls))
             return false;
 
         selectedRole = cls;
@@ -206,7 +213,12 @@ public class VisitableServerHandler implements IServerWorldHandler, IServerPolla
 
     @Override
     public List<CharacterClassDescription> getAvailableRoles() {
-        return world.getAvailableRoles();
+        ISpawnController controller = world.getWorld().getEntities().getByName(ISpawnController.class, spawnControllerName);
+
+        if(controller == null)
+            return new ArrayList<>();
+
+        return controller.getAvailableRoles();
     }
 
     private final class PlayerEntityObserver implements IEntity.IEntityWorldObserver {

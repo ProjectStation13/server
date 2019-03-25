@@ -5,40 +5,27 @@
  */
 package com.projectstation.server.entity;
 
-import com.jevaengine.spacestation.entity.*;
-import com.jevaengine.spacestation.entity.atmos.*;
-import com.jevaengine.spacestation.entity.network.*;
-import com.jevaengine.spacestation.entity.power.*;
-import com.jevaengine.spacestation.gas.GasSimulationNetwork;
-import com.jevaengine.spacestation.gas.GasType;
+import com.jevaengine.spacestation.ui.selectclass.CharacterClassDescription;
 import com.projectstation.network.entity.EntityConfigurationDetails;
 import io.github.jevaengine.IAssetStreamFactory;
-import io.github.jevaengine.IAssetStreamFactory.AssetStreamConstructionException;
 import io.github.jevaengine.IEngineThreadPool;
 import io.github.jevaengine.config.*;
-import io.github.jevaengine.rpg.entity.Door;
-import io.github.jevaengine.rpg.entity.RpgEntityFactory.DoorDeclaration;
-import io.github.jevaengine.rpg.item.IItem;
 import io.github.jevaengine.rpg.item.IItemFactory;
-import io.github.jevaengine.rpg.item.IItemFactory.ItemContructionException;
 import io.github.jevaengine.util.Nullable;
 import io.github.jevaengine.world.entity.IEntity;
 import io.github.jevaengine.world.entity.IEntityFactory;
 import io.github.jevaengine.world.entity.IParallelEntityFactory;
 import io.github.jevaengine.world.entity.ThreadPooledEntityFactory;
 import io.github.jevaengine.world.pathfinding.IRouteFactory;
-import io.github.jevaengine.world.scene.model.IAnimationSceneModel;
 import io.github.jevaengine.world.scene.model.IAnimationSceneModelFactory;
-import io.github.jevaengine.world.scene.model.ISceneModelFactory.SceneModelConstructionException;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -235,13 +222,34 @@ public class ServerStationEntityFactory implements IEntityFactory {
 	}
 
 	private enum ServerStationEntity {
-		RandomSpawnController(RandomSpawnController.class, "randomSpawnController", new EntityBuilder() {
+		RandomSpawnController(CharacterRoleSpawnController.class, "randomSpawnController", new EntityBuilder() {
 			@Override
 			public IEntity create(ServerStationEntityFactory entityFactory, String instanceName, URI context, IImmutableVariable auxConfig) throws EntityConstructionException {
 				try {
 					RandomSpawnControllerDeclaration decl = auxConfig.getValue(RandomSpawnControllerDeclaration.class);
-					return new RandomSpawnController(instanceName, entityFactory.m_parallelEntityFactory, decl.spawnDepth);
-				} catch (ValueSerializationException e) {
+
+					Map<String, CharacterClassDescription> desc = new HashMap<>();
+
+					for(CharacterClassDescription d : entityFactory.m_configurationFactory.create(decl.classDescriptions).getValues(CharacterClassDescription[].class)) {
+						desc.put(d.name, d);
+					}
+
+					Map<CharacterClassDescription, Integer> limits = new HashMap<>();
+					Map<CharacterClassDescription, String> spawnZones = new HashMap<>();
+
+					for(Map.Entry<String, Integer> l : decl.spawnLimits.entrySet()) {
+						if(desc.containsKey(l.getKey()))
+							limits.put(desc.get(l.getKey()), l.getValue());
+					}
+
+
+					for(Map.Entry<String, String> l : decl.spawnZones.entrySet()) {
+						if(desc.containsKey(l.getKey()))
+							spawnZones.put(desc.get(l.getKey()), l.getValue());
+					}
+
+					return new CharacterRoleSpawnController(instanceName, entityFactory.m_parallelEntityFactory, decl.spawnDepth, spawnZones, limits);
+				} catch (ValueSerializationException | IConfigurationFactory.ConfigurationConstructionException e) {
 					throw new EntityConstructionException(e);
 				}
 			}
@@ -278,16 +286,42 @@ public class ServerStationEntityFactory implements IEntityFactory {
 	public static final class RandomSpawnControllerDeclaration implements ISerializable {
 		public float spawnDepth;
 
+		public URI classDescriptions;
+
+		public Map<String, Integer> spawnLimits;
+
+		public Map<String, String> spawnZones;
+
 		@Override
 		public void serialize(IVariable target) throws ValueSerializationException {
 			target.addChild("spawnDepth").setValue(spawnDepth);
+			target.addChild("classDescriptions").setValue(classDescriptions);
+			target.addChild("spawnLimits").setValue(spawnLimits);
+			target.addChild("spawnZones").setValue(spawnZones);
 		}
 
 		@Override
 		public void deserialize(IImmutableVariable source) throws ValueSerializationException {
 			try {
 				spawnDepth = source.getChild("spawnDepth").getValue(Double.class).floatValue();
-			} catch (NoSuchChildVariableException ex) {
+
+				String sDesc = source.getChild("classDescriptions").getValue(String.class);
+				classDescriptions = new URI(sDesc);
+
+				spawnLimits = new HashMap<>();
+
+				IImmutableVariable limits = source.getChild("spawnLimits");
+				for(String className : limits.getChildren()) {
+					spawnLimits.put(className, limits.getChild(className).getValue(Integer.class));
+				}
+
+				spawnZones = new HashMap<>();
+				IImmutableVariable zones = source.getChild("spawnZones");
+				for(String className : zones.getChildren()) {
+					spawnZones.put(className, zones.getChild(className).getValue(String.class));
+				}
+
+			} catch (NoSuchChildVariableException | URISyntaxException ex) {
 				throw new ValueSerializationException(ex);
 			}
 		}
